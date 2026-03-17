@@ -15,8 +15,9 @@ export async function POST(request: NextRequest) {
     const safeName = (file.name || 'model.stl').replace(/[^a-zA-Z0-9._-]/g, '_')
     const uniqueName = `stl/${Date.now()}_${safeName}`
 
-    // Requires env var: BLOB_READ_WRITE_TOKEN (configured in Vercel project settings)
-    const blob = await put(uniqueName, file, {
+    const fileBody = await file.arrayBuffer()
+
+    const blob = await put(uniqueName, fileBody, {
       access: 'public',
       contentType: file.type || 'application/octet-stream',
       addRandomSuffix: false,
@@ -32,8 +33,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('upload-stl error:', error)
+
+    const details = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { error: 'Upload fehlgeschlagen. Prüfe BLOB_READ_WRITE_TOKEN auf Vercel.' },
+      { error: 'Upload fehlgeschlagen.', details },
       { status: 500 }
     )
   }

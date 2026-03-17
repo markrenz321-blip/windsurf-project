@@ -95,11 +95,22 @@ export default function OrderForm({ file, analysis, selectedMaterial, quality, i
       })
 
       if (!uploadRes.ok) {
-        let uploadErr = 'Upload fehlgeschlagen.'
+        let uploadErr = `Upload fehlgeschlagen. (HTTP ${uploadRes.status})`
         try {
-          const json = await uploadRes.json()
-          uploadErr = json?.details ? `${json?.error || uploadErr} ${json.details}` : (json?.error || uploadErr)
-        } catch {}
+          const text = await uploadRes.text()
+          try {
+            const json = JSON.parse(text)
+            uploadErr = json?.details
+              ? `${json?.error || uploadErr} ${json.details}`
+              : (json?.error || uploadErr)
+          } catch {
+            if (text?.trim()) {
+              uploadErr = `${uploadErr} ${text.slice(0, 500)}`
+            }
+          }
+        } catch {
+          // ignore
+        }
         setSubmitMessage(uploadErr)
         setIsSubmitting(false)
         return

@@ -98,7 +98,7 @@ export default function OrderForm({ file, analysis, selectedMaterial, quality, i
         let uploadErr = 'Upload fehlgeschlagen.'
         try {
           const json = await uploadRes.json()
-          uploadErr = json?.error || uploadErr
+          uploadErr = json?.details ? `${json?.error || uploadErr} ${json.details}` : (json?.error || uploadErr)
         } catch {}
         setSubmitMessage(uploadErr)
         setIsSubmitting(false)

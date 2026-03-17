@@ -1,43 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  const body = (await request.json()) as HandleUploadBody
+
   try {
-    const formData = await request.formData()
-    const file = formData.get('file')
-
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json({ error: 'Keine Datei empfangen.' }, { status: 400 })
-    }
-
-    const safeName = (file.name || 'model.stl').replace(/[^a-zA-Z0-9._-]/g, '_')
-    const uniqueName = `stl/${Date.now()}_${safeName}`
-
-    const fileBody = await file.arrayBuffer()
-
-    const blob = await put(uniqueName, fileBody, {
-      access: 'public',
-      contentType: file.type || 'application/octet-stream',
-      addRandomSuffix: false,
+    const jsonResponse = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (_pathname) => {
+        return {
+          allowedContentTypes: [
+            'model/stl',
+            'application/sla',
+            'application/vnd.ms-pki.stl',
+            'application/octet-stream',
+          ],
+          addRandomSuffix: false,
+          tokenPayload: JSON.stringify({}),
+        }
+      },
+      onUploadCompleted: async () => {
+        // Optional: hook to persist blob.url to a DB on completion
+      },
     })
 
-    return NextResponse.json({
-      success: true,
-      url: blob.url,
-      filename: file.name,
-      storedAs: uniqueName,
-      size: file.size,
-      type: file.type,
-    })
+    return NextResponse.json(jsonResponse)
   } catch (error) {
-    console.error('upload-stl error:', error)
-
-    const details = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { error: 'Upload fehlgeschlagen.', details },
-      { status: 500 }
+      { error: (error as Error).message },
+      { status: 400 }
     )
   }
 }

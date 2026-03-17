@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { User, Mail, Phone, MapPin, CreditCard, Package } from 'lucide-react'
 import { STLAnalysis, MATERIALS, calculateRealisticPrintCosts } from '../lib/stl-parser'
+import { upload } from '@vercel/blob/client'
 
 interface CustomerData {
   firstName: string
@@ -86,39 +87,16 @@ export default function OrderForm({ file, analysis, selectedMaterial, quality, i
       const generatedOrderId = `ORDER-${timestamp}-${random}`
       setOrderId(generatedOrderId)
 
-      const uploadForm = new FormData()
-      uploadForm.append('file', file)
+      const safeName = (file.name || 'model.stl').replace(/[^a-zA-Z0-9._-]/g, '_')
+      const pathname = `stl/${Date.now()}_${safeName}`
 
-      const uploadRes = await fetch('/api/upload-stl', {
-        method: 'POST',
-        body: uploadForm
+      const newBlob = await upload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/upload-stl',
       })
 
-      if (!uploadRes.ok) {
-        let uploadErr = `Upload fehlgeschlagen. (HTTP ${uploadRes.status})`
-        try {
-          const text = await uploadRes.text()
-          try {
-            const json = JSON.parse(text)
-            uploadErr = json?.details
-              ? `${json?.error || uploadErr} ${json.details}`
-              : (json?.error || uploadErr)
-          } catch {
-            if (text?.trim()) {
-              uploadErr = `${uploadErr} ${text.slice(0, 500)}`
-            }
-          }
-        } catch {
-          // ignore
-        }
-        setSubmitMessage(uploadErr)
-        setIsSubmitting(false)
-        return
-      }
-
-      const uploadJson = await uploadRes.json()
-      const stlFileUrl = uploadJson?.url
-      const stlFileName = uploadJson?.filename
+      const stlFileUrl = newBlob?.url
+      const stlFileName = file.name
 
       // Daten an API senden
       const response = await fetch('/api/order', {

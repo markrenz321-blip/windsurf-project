@@ -60,14 +60,14 @@ export async function GET(request: NextRequest) {
              fieldName.includes('customer')
     })
     
-    console.log('E-Mail-ähnliche Felder:', emailRelatedFields.map(f => f.name))
+    console.log('E-Mail-ähnliche Felder:', emailRelatedFields.map((f: any) => f.name))
     
     // 5. Alle Felder mit Details ausgeben
     const allFields = fields.map((field: any) => ({
       name: field.name,
       type: field.type,
       description: field.description || 'Keine Beschreibung',
-      isEmailRelated: emailRelatedFields.some(f => f.name === field.name),
+      isEmailRelated: emailRelatedFields.some((f: any) => f.name === field.name),
       options: field.options || null
     }))
     
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         fieldCount: fields.length
       },
       fields: allFields,
-      emailFields: emailRelatedFields.map(f => f.name),
+      emailFields: emailRelatedFields.map((f: any) => f.name),
       recommendations: [
         '1. Suche ein Feld mit "mail" oder "email" im Namen',
         '2. Prüfe die exakten Feldnamen in dieser Liste',

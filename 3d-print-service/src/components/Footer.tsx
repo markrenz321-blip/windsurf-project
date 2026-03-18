@@ -53,12 +53,12 @@ export default function Footer() {
             <h3 className="text-white font-semibold mb-4">Dienstleistungen</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="#upload" className="text-gray-300 hover:text-indigo-400 transition-colors text-sm">
+                <Link href="/3d-druckservice" className="text-gray-300 hover:text-indigo-400 transition-colors text-sm">
                   3D-Druck Service
                 </Link>
               </li>
               <li>
-                <Link href="#materials" className="text-gray-300 hover:text-indigo-400 transition-colors text-sm">
+                <Link href="/materialien" className="text-gray-300 hover:text-indigo-400 transition-colors text-sm">
                   Materialien
                 </Link>
               </li>
@@ -73,7 +73,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#bulk" className="text-gray-300 hover:text-indigo-400 transition-colors text-sm">
+                <Link href="/grossauftraege" className="text-gray-300 hover:text-indigo-400 transition-colors text-sm">
                   Großaufträge
                 </Link>
               </li>

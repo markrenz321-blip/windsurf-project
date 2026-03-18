@@ -3,43 +3,17 @@
 import { useState } from 'react'
 import { Search, Package, Clock, CheckCircle, Truck, AlertCircle } from 'lucide-react'
 
-// Dummy-Daten für Bestellstatus
-const mockOrders = [
-  {
-    id: 'ORD-001',
-    status: 'queue' as const,
-    statusText: 'In Warteschlange',
-    description: 'Ihre Bestellung wurde erhalten und wartet auf Bearbeitung',
-    estimatedTime: '2-3 Stunden',
-    progress: 10
-  },
-  {
-    id: 'ORD-002',
-    status: 'printing' as const,
-    statusText: 'Druckt',
-    description: 'Ihr 3D-Druck wird derzeit erstellt',
-    estimatedTime: '1-2 Stunden',
-    progress: 45
-  },
-  {
-    id: 'ORD-003',
-    status: 'quality' as const,
-    statusText: 'Qualitätskontrolle',
-    description: 'Ihr Druck wird auf Qualität geprüft',
-    estimatedTime: '30 Minuten',
-    progress: 75
-  },
-  {
-    id: 'ORD-004',
-    status: 'shipped' as const,
-    statusText: 'Versendet',
-    description: 'Ihre Bestellung wurde versendet',
-    estimatedTime: 'Lieferung in 1-2 Tagen',
-    progress: 100
-  }
-]
-
 type OrderStatus = 'queue' | 'printing' | 'quality' | 'shipped' | 'not_found'
+
+type StatusResult = {
+  found: boolean
+  recordId?: string
+  stage?: OrderStatus
+  statusText?: string
+  description?: string
+  progress?: number
+  statusRaw?: string | null
+}
 
 const statusConfig = {
   queue: { icon: Clock, color: 'text-yellow-500', bgColor: 'bg-yellow-500/20' },
@@ -51,23 +25,32 @@ const statusConfig = {
 
 export default function StatusCheck() {
   const [orderId, setOrderId] = useState('')
-  const [searchResult, setSearchResult] = useState<typeof mockOrders[0] | null>(null)
+  const [searchResult, setSearchResult] = useState<StatusResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
 
   const handleSearch = async () => {
     if (!orderId.trim()) return
 
     setIsSearching(true)
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      const result = mockOrders.find(order => 
-        order.id.toLowerCase() === orderId.toLowerCase()
-      )
-      
-      setSearchResult(result || null)
+
+    try {
+      const response = await fetch(`/api/order-status/${encodeURIComponent(orderId.trim())}`)
+      const data = (await response.json()) as StatusResult
+
+      if (!response.ok) {
+        setSearchResult({ found: false })
+        return
+      }
+
+      if (!data.found) {
+        setSearchResult({ found: false })
+        return
+      }
+
+      setSearchResult(data)
+    } finally {
       setIsSearching(false)
-    }, 1000)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -86,12 +69,12 @@ export default function StatusCheck() {
           <Icon className={`w-6 h-6 ${config.color}`} />
           <div>
             <p className={`font-semibold ${config.color}`}>
-              {status === 'not_found' ? 'Nicht gefunden' : (mockOrders.find(o => o.status === status)?.statusText || '')}
+              {status === 'not_found' ? 'Nicht gefunden' : ''}
             </p>
             <p className="text-gray-400 text-sm">
               {status === 'not_found' 
                 ? 'Keine Bestellung mit dieser Nummer gefunden'
-                : (mockOrders.find(o => o.status === status)?.description || '')
+                : ''
               }
             </p>
           </div>
@@ -119,7 +102,7 @@ export default function StatusCheck() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Bestellnummer eingeben (z.B. ORD-001)"
+                placeholder="Tracking-ID eingeben (z.B. recXXXXXXXXXXXXXX)"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -137,17 +120,17 @@ export default function StatusCheck() {
         </div>
 
         {/* Search results */}
-        {searchResult && (
+        {searchResult && searchResult.found && (
           <div className="space-y-6 fade-in">
             {/* Order info */}
             <div className="glass rounded-2xl p-8">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-white">
-                  Bestellung {searchResult.id}
+                  Bestellung {searchResult.recordId}
                 </h3>
                 <div className="text-right">
-                  <p className="text-gray-400 text-sm">Geschätzte Zeit</p>
-                  <p className="text-white font-semibold">{searchResult.estimatedTime}</p>
+                  <p className="text-gray-400 text-sm">Airtable Status</p>
+                  <p className="text-white font-semibold">{searchResult.statusRaw || '—'}</p>
                 </div>
               </div>
 
@@ -155,12 +138,12 @@ export default function StatusCheck() {
               <div className="mb-6">
                 <div className="flex justify-between text-sm text-gray-400 mb-2">
                   <span>Fortschritt</span>
-                  <span>{searchResult.progress}%</span>
+                  <span>{searchResult.progress ?? 0}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-3">
                   <div 
                     className="bg-gradient-to-r from-indigo-500 to-purple-500 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${searchResult.progress}%` }}
+                    style={{ width: `${searchResult.progress ?? 0}%` }}
                   ></div>
                 </div>
               </div>
@@ -170,17 +153,30 @@ export default function StatusCheck() {
                 <h4 className="text-lg font-semibold text-white mb-4">Status-Verlauf</h4>
                 
                 {/* Current status */}
-                {getStatusDisplay(searchResult.status)}
+                {searchResult.stage && (
+                  <div className={`p-4 rounded-xl ${statusConfig[searchResult.stage].bgColor} border border-gray-700`}>
+                    <div className="flex items-center space-x-3">
+                      {(() => {
+                        const Icon = statusConfig[searchResult.stage].icon
+                        return <Icon className={`w-6 h-6 ${statusConfig[searchResult.stage].color}`} />
+                      })()}
+                      <div>
+                        <p className={`font-semibold ${statusConfig[searchResult.stage].color}`}>{searchResult.statusText}</p>
+                        <p className="text-gray-400 text-sm">{searchResult.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Previous statuses (completed) */}
-                {searchResult.status === 'printing' && getStatusDisplay('queue')}
-                {searchResult.status === 'quality' && (
+                {searchResult.stage === 'printing' && getStatusDisplay('queue')}
+                {searchResult.stage === 'quality' && (
                   <>
                     {getStatusDisplay('printing')}
                     {getStatusDisplay('queue')}
                   </>
                 )}
-                {searchResult.status === 'shipped' && (
+                {searchResult.stage === 'shipped' && (
                   <>
                     {getStatusDisplay('quality')}
                     {getStatusDisplay('printing')}
@@ -193,7 +189,7 @@ export default function StatusCheck() {
         )}
 
         {/* No results */}
-        {searchResult === null && orderId && !isSearching && (
+        {searchResult && !searchResult.found && orderId && !isSearching && (
           <div className="glass rounded-2xl p-8 text-center fade-in">
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">
@@ -202,9 +198,6 @@ export default function StatusCheck() {
             <p className="text-gray-400 mb-4">
               Bitte überprüfen Sie Ihre Bestellnummer und versuchen Sie es erneut.
             </p>
-            <p className="text-gray-500 text-sm">
-              Beispiel-Bestellnummern: ORD-001, ORD-002, ORD-003, ORD-004
-            </p>
           </div>
         )}
 
@@ -212,7 +205,7 @@ export default function StatusCheck() {
         {!orderId && (
           <div className="glass rounded-2xl p-6 text-center">
             <p className="text-gray-400 text-sm">
-              Testen Sie mit Beispiel-Bestellnummern: ORD-001, ORD-002, ORD-003, ORD-004
+              Nach dem Absenden erhältst du eine Tracking-ID (beginnt meist mit "rec").
             </p>
           </div>
         )}

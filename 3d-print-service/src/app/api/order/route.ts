@@ -94,7 +94,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const normalizedOrderType: 'direct' | 'photo' = orderType === 'photo' ? 'photo' : 'direct'
+    const normalizedOrderType: 'direct' | 'photo' =
+      orderType === 'photo' || orderType === 'series' || orderType === 'cad' ? 'photo' : 'direct'
 
     // Airtable API aufrufen
     const airtableUrl = `https://api.airtable.com/v0/${airtableConfig.baseId}/${airtableConfig.tableId}`

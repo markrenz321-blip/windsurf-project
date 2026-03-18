@@ -17,16 +17,19 @@ interface CustomerData {
 }
 
 interface OrderFormProps {
-  orderType: 'direct' | 'photo'
+  orderType: 'direct' | 'photo' | 'series' | 'cad'
   stlFile?: File
   analysis: STLAnalysis | null
   selectedMaterial: string
   quality: string
   infill: string
   calculatedCosts?: any
+  prefillCustomerNote?: string
+  prefillNeedsCadHelp?: boolean
+  prefillPhotoFiles?: File[]
 }
 
-export default function OrderForm({ orderType, stlFile, analysis, selectedMaterial, quality, infill, calculatedCosts }: OrderFormProps) {
+export default function OrderForm({ orderType, stlFile, analysis, selectedMaterial, quality, infill, calculatedCosts, prefillCustomerNote, prefillNeedsCadHelp, prefillPhotoFiles }: OrderFormProps) {
   // States für alle Eingabefelder
   const [customerData, setCustomerData] = useState<CustomerData>({
     firstName: '',
@@ -42,9 +45,11 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
   const [orderId, setOrderId] = useState('')
-  const [comment, setComment] = useState('')
-  const [photoFiles, setPhotoFiles] = useState<File[]>([])
-  const [needsCadHelp, setNeedsCadHelp] = useState(false)
+  const [airtableRecordId, setAirtableRecordId] = useState('')
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [comment, setComment] = useState(prefillCustomerNote ?? '')
+  const [photoFiles, setPhotoFiles] = useState<File[]>(prefillPhotoFiles ?? [])
+  const [needsCadHelp, setNeedsCadHelp] = useState(Boolean(prefillNeedsCadHelp))
 
   const photoPreviews = useMemo(() => {
     return photoFiles.map((file) => ({
@@ -116,7 +121,7 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
       }
     }
 
-    if (orderType === 'photo') {
+    if (orderType !== 'direct') {
       if (photoFiles.length === 0 && comment.trim() === '') {
         setSubmitMessage('Bitte fügen Sie mindestens ein Foto hinzu oder beschreiben Sie Ihre Anfrage im Kommentar.')
         return
@@ -151,7 +156,7 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
         | Array<{ url: string; filename?: string }>
         | undefined
 
-      if (orderType === 'photo' && photoFiles.length > 0) {
+      if (orderType !== 'direct' && photoFiles.length > 0) {
         const uploaded = await Promise.all(
           photoFiles.map(async (file) => {
             const safePhotoName = (file.name || 'foto').replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -198,7 +203,11 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
       const result = await response.json()
 
       if (response.ok && result.success) {
+        if (result.airtableRecordId) {
+          setAirtableRecordId(String(result.airtableRecordId))
+        }
         setSubmitMessage(`Deine Bestellung #${generatedOrderId} wurde erfolgreich empfangen!`)
+        setIsSuccess(true)
         setIsSubmitting(false)
         
         // Optional: Weiterleitung oder weitere Aktionen
@@ -207,14 +216,50 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
         }, 3000)
       } else {
         setSubmitMessage(result.error || 'Fehler bei der Bestellung. Bitte versuchen Sie es später.')
+        setIsSuccess(false)
         setIsSubmitting(false)
       }
 
     } catch (error) {
       console.error('Fehler bei Bestellung:', error)
       setSubmitMessage('Fehler bei der Bestellung. Bitte versuchen Sie es später.')
+      setIsSuccess(false)
       setIsSubmitting(false)
     }
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="glass rounded-2xl p-6 space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 rounded-lg bg-green-500/15 border border-green-500/20">
+            <Package className="w-6 h-6 text-green-300" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-white">Anfrage empfangen</h3>
+            <p className="text-gray-300 text-sm mt-1">Wir melden uns zeitnah mit den nächsten Schritten.</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-gray-800/50 p-4">
+          <div className="text-gray-300 text-sm">Tracking-ID</div>
+          <div className="text-white font-semibold mt-1">{airtableRecordId || '—'}</div>
+          <div className="text-gray-400 text-xs mt-2">
+            Diese ID kannst du im Bereich „Bestellstatus“ eingeben.
+          </div>
+
+          <div className="mt-4 text-gray-300 text-sm">Referenz</div>
+          <div className="text-white font-semibold mt-1">#{orderId}</div>
+          <div className="text-gray-400 text-xs mt-2">
+            Bitte diese Nummer bei Rückfragen angeben.
+          </div>
+        </div>
+
+        {submitMessage && (
+          <div className="p-3 rounded-lg text-center bg-green-600 text-white">{submitMessage}</div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -254,7 +299,7 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
         </div>
       )}
 
-      {orderType === 'photo' && (
+      {orderType !== 'direct' && (
         <div className="bg-gray-800 rounded-lg p-4 mb-6">
           <h4 className="text-white font-medium mb-3">Zusammenfassung</h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -268,7 +313,7 @@ export default function OrderForm({ orderType, stlFile, analysis, selectedMateri
         </div>
       )}
 
-      {orderType === 'photo' && (
+      {orderType !== 'direct' && (
         <div className="bg-gray-800 rounded-lg p-4 mb-6">
           <h4 className="text-white font-medium mb-3">Anfrage mit Foto</h4>
           <div className="space-y-3">

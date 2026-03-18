@@ -30,6 +30,35 @@ export default function PriceCalculator({ analysis, onCostUpdate }: PriceCalcula
 
   const material = MATERIALS[selectedMaterial as keyof typeof MATERIALS]
 
+  const allowedMaterials = ['PLA', 'TPU', 'PETG'] as const
+
+  const materialBenefits: Record<(typeof allowedMaterials)[number], { headline: string; bullets: string[] }> = {
+    PLA: {
+      headline: 'Perfekt für Prototypen & saubere Optik',
+      bullets: [
+        'Sehr präzise Details und glatte Oberflächen',
+        'Ideal für Gehäuse, Deko, Prototypen und Passformen',
+        'Schnell startklar und kosteneffizient',
+      ],
+    },
+    TPU: {
+      headline: 'Flexibel, stoßdämpfend, langlebig',
+      bullets: [
+        'Ideal für Clips, Dichtungen, Griffe und Schutzelemente',
+        'Hohe Abriebfestigkeit und gute Rückstellkraft',
+        'Angenehme Haptik – perfekt für funktionale Teile',
+      ],
+    },
+    PETG: {
+      headline: 'Robust & alltagstauglich',
+      bullets: [
+        'Gute Stabilität bei gleichzeitig sauberer Optik',
+        'Widerstandsfähiger gegen Alltagseinflüsse als Standard-PLA',
+        'Top Wahl für Halterungen, Adapter und Funktionsteile',
+      ],
+    },
+  }
+
   return (
     <div className="glass rounded-2xl p-6 space-y-6">
       {/* Header */}
@@ -43,8 +72,10 @@ export default function PriceCalculator({ analysis, onCostUpdate }: PriceCalcula
       {/* Materialauswahl */}
       <div>
         <label className="block text-gray-300 mb-3 text-sm font-medium">Material</label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(MATERIALS).map(([key, mat]) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {allowedMaterials.map((key) => {
+            const mat = MATERIALS[key]
+            return (
             <button
               key={key}
               onClick={() => setSelectedMaterial(key)}
@@ -63,7 +94,32 @@ export default function PriceCalculator({ analysis, onCostUpdate }: PriceCalcula
                 <span className="text-gray-400 text-xs">€{mat.pricePerKg}/kg</span>
               </div>
             </button>
-          ))}
+            )
+          })}
+        </div>
+
+        <div className="mt-4 rounded-xl border border-white/10 bg-gray-800/50 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-white font-semibold">{selectedMaterial}</div>
+              <div className="text-gray-300 text-sm mt-1">
+                {materialBenefits[selectedMaterial as (typeof allowedMaterials)[number]].headline}
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-300">
+              <span className="px-2 py-1 rounded-full border border-white/10 bg-black/20">Stabil</span>
+              <span className="px-2 py-1 rounded-full border border-white/10 bg-black/20">Sauber</span>
+              <span className="px-2 py-1 rounded-full border border-white/10 bg-black/20">Präzise</span>
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {materialBenefits[selectedMaterial as (typeof allowedMaterials)[number]].bullets.map((b) => (
+              <div key={b} className="text-sm text-gray-200/90 border border-white/10 bg-black/20 rounded-lg px-3 py-2">
+                {b}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

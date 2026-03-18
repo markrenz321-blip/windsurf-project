@@ -17,14 +17,12 @@ export default function Hero() {
       <div className="relative z-10 text-center px-4 fade-in">
         {/* Icon */}
         <div className="mb-8 flex justify-center">
-          <div className="glass rounded-full p-6 glass-hover transition-all duration-300">
-            <img
-              src="/logo.png"
-              alt="Renz 3D Print"
-              className="h-16 sm:h-20 w-auto object-contain"
-              loading="eager"
-            />
-          </div>
+          <img
+            src="/logo.png"
+            alt="Renz 3D Print"
+            className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+            loading="eager"
+          />
         </div>
 
         {/* Main heading */}

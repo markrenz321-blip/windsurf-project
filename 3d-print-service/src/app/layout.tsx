@@ -18,18 +18,6 @@ export default function RootLayout({
     <html lang="de" className="dark">
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-900">
-          <header className="sticky top-0 z-50 backdrop-blur border-b border-white/5 bg-gray-900/70">
-            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-              <a href="/" className="flex items-center">
-                <img
-                  src="/logo.png"
-                  alt="Renz 3D Print"
-                  className="h-10 sm:h-12 w-auto object-contain"
-                  loading="eager"
-                />
-              </a>
-            </div>
-          </header>
           {children}
         </div>
       </body>

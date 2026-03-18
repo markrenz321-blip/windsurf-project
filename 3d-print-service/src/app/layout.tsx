@@ -22,10 +22,10 @@ export default function RootLayout({
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
               <a href="/" className="flex items-center">
                 <picture>
-                  <source srcSet="/uploads/logo-transparent.webp" type="image/webp" />
-                  <source srcSet="/uploads/logo-transparent.png" type="image/png" />
+                  <source srcSet="/logo-transparent.webp" type="image/webp" />
+                  <source srcSet="/logo-transparent.png" type="image/png" />
                   <img
-                    src="/uploads/logo.png"
+                    src="/logo.png"
                     alt="Renz 3D Print"
                     className="h-10 sm:h-12 w-auto object-contain"
                     loading="eager"

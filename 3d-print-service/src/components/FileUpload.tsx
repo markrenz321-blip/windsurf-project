@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, File as FileIcon, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { STLParser, STLAnalysis } from '../lib/stl-parser'
 import { STLLoader, STLMesh } from '../lib/stl-loader'
 import PriceCalculator from './PriceCalculator'
@@ -25,6 +25,7 @@ export default function FileUpload() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null)
+  const [activeTab, setActiveTab] = useState<'direct' | 'photo'>('direct')
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -169,44 +170,100 @@ export default function FileUpload() {
           </p>
         </div>
 
-        {/* Upload area */}
-        <div
-          className={`
-            glass rounded-2xl p-12 text-center transition-all duration-300
-            ${isDragging ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-700'}
-          `}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <div className="flex flex-col items-center space-y-4">
-            <div className="p-6 rounded-full bg-indigo-500/20">
-              <Upload className="w-12 h-12 text-indigo-400" />
-            </div>
-            
-            <div>
-              <p className="text-xl text-white font-medium mb-2">
-                {isDragging ? 'Loslassen zum Hochladen' : 'Dateien hier ablegen'}
-              </p>
-              <p className="text-gray-400 mb-4">oder</p>
-              <label className="cursor-pointer">
-                <span className="glass glass-hover px-6 py-3 rounded-full text-white font-medium transition-all duration-300 inline-block">
-                  Dateien Auswählen
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  accept=".stl,.obj"
-                  onChange={handleFileInput}
-                  className="hidden"
-                />
-              </label>
-            </div>
+        <div className="flex justify-center mb-8">
+          <div className="glass rounded-full p-1 inline-flex">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('direct')
+                setSelectedFile(null)
+              }}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                activeTab === 'direct'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-200 hover:bg-white/5'
+              }`}
+            >
+              Direkt-Druck (STL/OBJ)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('photo')
+                setSelectedFile({
+                  file: new File([], 'photo-request', { type: 'application/octet-stream' }),
+                  id: 'photo-request',
+                  uploadProgress: 100,
+                  status: 'success',
+                  selectedMaterial: 'PLA',
+                  quality: 'standard',
+                  infill: 'standard',
+                })
+              }}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                activeTab === 'photo'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-gray-200 hover:bg-white/5'
+              }`}
+            >
+              Anfrage mit Foto (Ersatzteil/Idee)
+            </button>
           </div>
         </div>
 
+        {activeTab === 'direct' && (
+          <div
+            className={`
+              glass rounded-2xl p-12 text-center transition-all duration-300
+              ${isDragging ? 'border-indigo-500 bg-indigo-500/10' : 'border-gray-700'}
+            `}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="flex flex-col items-center space-y-4">
+              <div className="p-6 rounded-full bg-indigo-500/20">
+                <Upload className="w-12 h-12 text-indigo-400" />
+              </div>
+              
+              <div>
+                <p className="text-xl text-white font-medium mb-2">
+                  {isDragging ? 'Loslassen zum Hochladen' : 'Dateien hier ablegen'}
+                </p>
+                <p className="text-gray-400 mb-4">oder</p>
+                <label className="cursor-pointer">
+                  <span className="glass glass-hover px-6 py-3 rounded-full text-white font-medium transition-all duration-300 inline-block">
+                    Dateien Auswählen
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".stl,.obj"
+                    onChange={handleFileInput}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'photo' && (
+          <div className="glass rounded-2xl p-8 transition-all duration-300">
+            <div className="text-center">
+              <h3 className="text-2xl font-semibold text-white">Anfrage mit Foto</h3>
+              <p className="text-gray-300 mt-2">
+                Lade bis zu 5 Bilder hoch und beschreibe kurz dein Ersatzteil oder deine Idee.
+              </p>
+              <p className="text-gray-400 text-sm mt-2">
+                Preis nach Prüfung • Angebot folgt
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Uploaded files list */}
-        {uploadedFiles.length > 0 && (
+        {activeTab === 'direct' && uploadedFiles.length > 0 && (
           <div className="mt-8 space-y-4">
             <h3 className="text-xl font-semibold text-white mb-4">Hochgeladene Dateien</h3>
             {uploadedFiles.map((uploadedFile) => (
@@ -214,7 +271,7 @@ export default function FileUpload() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 flex-1">
                     <div className="p-2 rounded-lg bg-indigo-500/20">
-                      <File className="w-6 h-6 text-indigo-400" />
+                      <FileIcon className="w-6 h-6 text-indigo-400" />
                     </div>
                     
                     <div className="flex-1">
@@ -294,7 +351,7 @@ export default function FileUpload() {
         )}
 
         {/* 3D Scanner */}
-        {selectedFile && selectedFile.stlMesh && (
+        {activeTab === 'direct' && selectedFile && selectedFile.stlMesh && (
           <div className="mt-8">
             <Scanner3D 
               file={selectedFile.file}
@@ -306,7 +363,7 @@ export default function FileUpload() {
         )}
 
         {/* Price Calculator */}
-        {selectedFile && selectedFile.analysis && (
+        {activeTab === 'direct' && selectedFile && selectedFile.analysis && (
           <div className="mt-8">
             <PriceCalculator 
               analysis={selectedFile.analysis}
@@ -318,11 +375,12 @@ export default function FileUpload() {
         )}
 
         {/* Order Form */}
-        {selectedFile && selectedFile.analysis && selectedFile.costs && (
+        {selectedFile && (
           <div className="mt-8">
             <OrderForm
-              file={selectedFile.file}
-              analysis={selectedFile.analysis}
+              orderType={activeTab}
+              stlFile={activeTab === 'direct' && selectedFile.analysis ? selectedFile.file : undefined}
+              analysis={selectedFile.analysis || null}
               selectedMaterial={selectedFile.selectedMaterial || 'PLA'}
               quality={selectedFile.quality || 'standard'}
               infill={selectedFile.infill || 'standard'}

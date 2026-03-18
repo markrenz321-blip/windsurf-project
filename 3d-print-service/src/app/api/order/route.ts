@@ -22,7 +22,33 @@ export async function POST(request: NextRequest) {
     }
     
     // Validierung der Pflichtfelder
-    const { firstName, lastName, email, address, postalCode, city, country, phone, orderId, material, quality, infill, totalPrice, estimatedPrintTime, weightGrams, printTimeMinutes, stlFileUrl, stlFileName } = body
+    const {
+      firstName,
+      lastName,
+      email,
+      address,
+      postalCode,
+      city,
+      country,
+      phone,
+      orderId,
+      orderType,
+      material,
+      quality,
+      infill,
+      totalPrice,
+      estimatedPrintTime,
+      weightGrams,
+      printTimeMinutes,
+      stlFileUrl,
+      stlFileName,
+      photoUrl,
+      photoName,
+      comment,
+      projectPhotos,
+      customerNote,
+      needsCadHelp,
+    } = body
     
     // Logging der empfangenen Daten
     console.log('Empfangene Bestelldaten:', {
@@ -68,6 +94,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const normalizedOrderType: 'direct' | 'photo' = orderType === 'photo' ? 'photo' : 'direct'
+
     // Airtable API aufrufen
     const airtableUrl = `https://api.airtable.com/v0/${airtableConfig.baseId}/${airtableConfig.tableId}`
     console.log('Airtable URL:', airtableUrl)
@@ -98,6 +126,48 @@ export async function POST(request: NextRequest) {
                   ],
                 }
               : {}),
+            ...(photoUrl
+              ? {
+                  'Foto': [
+                    {
+                      url: String(photoUrl),
+                      filename: photoName ? String(photoName) : 'foto',
+                    },
+                  ],
+                }
+              : {}),
+            ...(comment
+              ? {
+                  'Kommentar': String(comment),
+                }
+              : {}),
+            ...(customerNote
+              ? {
+                  'Kunden-Notiz': String(customerNote),
+                }
+              : {}),
+            ...(Array.isArray(projectPhotos) && projectPhotos.length > 0
+              ? {
+                  'Projekt-Fotos': projectPhotos
+                    .filter((p: any) => p && p.url)
+                    .map((p: any) => ({
+                      url: String(p.url),
+                      ...(p.filename ? { filename: String(p.filename) } : {}),
+                    })),
+                }
+              : {}),
+            ...(typeof needsCadHelp === 'boolean'
+              ? {
+                  'CAD-Konstruktionshilfe': needsCadHelp,
+                }
+              : {}),
+            ...(normalizedOrderType === 'photo'
+              ? {
+                  'Status': '🔍 Prüfung',
+                }
+              : {
+                  'Status': 'Eingegangen',
+                }),
             'Gewicht (g)': numericWeightGrams,
             'Druckzeit (min)': numericPrintTimeMinutes
           }

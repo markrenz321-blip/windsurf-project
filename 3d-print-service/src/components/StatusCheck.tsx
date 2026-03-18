@@ -102,7 +102,7 @@ export default function StatusCheck() {
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Tracking-ID eingeben (z.B. recXXXXXXXXXXXXXX)"
+                placeholder="Tracking-ID (rec...) oder Bestellnummer (ORDER-...)"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -205,7 +205,7 @@ export default function StatusCheck() {
         {!orderId && (
           <div className="glass rounded-2xl p-6 text-center">
             <p className="text-gray-400 text-sm">
-              Nach dem Absenden erhältst du eine Tracking-ID (beginnt meist mit "rec").
+              Nach dem Absenden erhältst du eine Tracking-ID ("rec...") und eine Bestellnummer ("ORDER-...").
             </p>
           </div>
         )}

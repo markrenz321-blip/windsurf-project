@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         records: [{
           fields: {
-            // 'Bestell-ID': orderId,  // Entfernt - computed field
+            'Bestell-ID': orderId,
             'Kundenname': `${firstName ?? ''} ${lastName ?? ''}`.trim(),
             'E-Mail': email,
             ...(stlFileUrl

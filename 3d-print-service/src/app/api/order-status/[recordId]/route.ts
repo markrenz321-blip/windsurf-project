@@ -75,9 +75,9 @@ function mapAirtableStatusToStage(statusRaw: string | undefined): StatusStage {
 
 export async function GET(_request: NextRequest, { params }: { params: { recordId: string } }) {
   try {
-    const recordId = String(params.recordId || '').trim()
+    const input = String(params.recordId || '').trim()
 
-    if (!recordId) {
+    if (!input) {
       return NextResponse.json({ error: 'recordId fehlt' }, { status: 400 })
     }
 
@@ -90,36 +90,70 @@ export async function GET(_request: NextRequest, { params }: { params: { recordI
       )
     }
 
-    const airtableUrl = `https://api.airtable.com/v0/${airtableConfig.baseId}/${airtableConfig.tableId}/${encodeURIComponent(recordId)}`
+    const isRecordId = input.toLowerCase().startsWith('rec')
+    const recordId = input
 
-    const response = await fetch(airtableUrl, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${airtableConfig.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    })
-
-    if (response.status === 404) {
-      return NextResponse.json({ found: false }, { status: 200 })
+    const headers = {
+      Authorization: `Bearer ${airtableConfig.apiKey}`,
+      'Content-Type': 'application/json',
     }
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      return NextResponse.json(
-        { error: 'Airtable Status konnte nicht geladen werden', details: errorText },
-        { status: response.status }
-      )
+    let statusRaw: string | undefined
+    let resolvedRecordId: string | undefined
+
+    if (isRecordId) {
+      const airtableUrl = `https://api.airtable.com/v0/${airtableConfig.baseId}/${airtableConfig.tableId}/${encodeURIComponent(recordId)}`
+      const response = await fetch(airtableUrl, {
+        method: 'GET',
+        headers,
+        cache: 'no-store',
+      })
+
+      if (response.status === 404) {
+        return NextResponse.json({ found: false }, { status: 200 })
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        return NextResponse.json(
+          { error: 'Airtable Status konnte nicht geladen werden', details: errorText },
+          { status: response.status }
+        )
+      }
+
+      const data = await response.json()
+      statusRaw = data?.fields?.Status
+      resolvedRecordId = recordId
+    } else {
+      const listUrl = `https://api.airtable.com/v0/${airtableConfig.baseId}/${airtableConfig.tableId}?filterByFormula=${encodeURIComponent(`{Bestell-ID}='${input}'`)}`
+      const response = await fetch(listUrl, {
+        method: 'GET',
+        headers,
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        return NextResponse.json(
+          { error: 'Airtable Status konnte nicht geladen werden', details: errorText },
+          { status: response.status }
+        )
+      }
+
+      const data = await response.json()
+      const first = Array.isArray(data?.records) ? data.records[0] : null
+      if (!first) {
+        return NextResponse.json({ found: false }, { status: 200 })
+      }
+      statusRaw = first?.fields?.Status
+      resolvedRecordId = first?.id
     }
 
-    const data = await response.json()
-    const statusRaw = data?.fields?.Status
     const mapped = mapAirtableStatusToStage(statusRaw)
 
     return NextResponse.json({
       found: true,
-      recordId,
+      recordId: resolvedRecordId,
       statusRaw: statusRaw ?? null,
       ...mapped,
     })

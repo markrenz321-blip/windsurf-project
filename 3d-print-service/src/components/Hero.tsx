@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowDown } from 'lucide-react'
+import { ArrowDown, Printer } from 'lucide-react'
 
 export default function Hero() {
   return (
@@ -18,12 +18,7 @@ export default function Hero() {
         {/* Icon */}
         <div className="mb-8 flex justify-center">
           <div className="glass rounded-full p-6 glass-hover transition-all duration-300">
-            <img
-              src="/logo-icon.svg"
-              alt="Renz 3D Print"
-              className="w-16 h-16"
-              loading="eager"
-            />
+            <Printer className="w-16 h-16 text-indigo-400" />
           </div>
         </div>
 

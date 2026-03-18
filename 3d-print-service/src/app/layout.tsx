@@ -5,7 +5,7 @@ import { Inter } from 'next/font/google'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Renz 3D Print',
+  title: '3D Print Service',
   description: 'Dein Design, unser Druck - Professioneller 3D-Druck Service',
 }
 
@@ -16,19 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de" className="dark">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gray-900">
-          <header className="sticky top-0 z-50 backdrop-blur border-b border-white/5 bg-gray-900/70">
-            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-              <a href="/" className="flex items-center space-x-3">
-                <img src="/logo-icon.svg" alt="Renz 3D Print" className="w-9 h-9" />
-                <img src="/logo.svg" alt="Renz 3D Print" className="h-8 hidden sm:block" />
-              </a>
-            </div>
-          </header>
-          {children}
-        </div>
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

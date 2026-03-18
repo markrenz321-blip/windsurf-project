@@ -20,7 +20,7 @@ export default function Hero() {
           <img
             src="/logo.png"
             alt="Renz 3D Print"
-            className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+            className="h-48 sm:h-56 md:h-64 w-auto object-contain"
             loading="eager"
           />
         </div>

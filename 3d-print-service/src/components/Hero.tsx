@@ -18,16 +18,12 @@ export default function Hero() {
         {/* Icon */}
         <div className="mb-8 flex justify-center">
           <div className="glass rounded-full p-6 glass-hover transition-all duration-300">
-            <picture>
-              <source srcSet="/logo-transparent.webp" type="image/webp" />
-              <source srcSet="/logo-transparent.png" type="image/png" />
-              <img
-                src="/logo.png"
-                alt="Renz 3D Print"
-                className="h-16 sm:h-20 w-auto object-contain"
-                loading="eager"
-              />
-            </picture>
+            <img
+              src="/logo.png"
+              alt="Renz 3D Print"
+              className="h-16 sm:h-20 w-auto object-contain"
+              loading="eager"
+            />
           </div>
         </div>
 
